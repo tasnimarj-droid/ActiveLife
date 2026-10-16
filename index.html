@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ActiveLife - Suivi de Sport & Poids</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- connexion / inscription -->
+  <div id="auth-container" class="auth-container">
+    <div class="auth-card">
+      <header class="auth-header">
+        <div class="logo"><i class="fa-solid fa-heart-pulse"></i> <span>ActiveLife</span></div>
+        <h2>Suivi Sportif</h2>
+        <p>Suivi de l'activité physique & poids quotidien</p>
+      </header>
+
+      <div class="auth-tabs">
+        <button id="tab-login-btn" class="auth-tab active" onclick="switchAuthTab('login')">Connexion</button>
+        <button id="tab-register-btn" class="auth-tab" onclick="switchAuthTab('register')">Inscription</button>
+      </div>
+
+      <form id="login-form" class="auth-form active-form">
+        <div class="form-group">
+          <label for="login-email"><i class="fa-solid fa-envelope"></i> Adresse Email</label>
+          <input type="email" id="login-email" required placeholder="nom@exemple.com">
+        </div>
+        <div class="form-group">
+          <label for="login-password"><i class="fa-solid fa-lock"></i> Mot de passe</label>
+          <input type="password" id="login-password" required placeholder="••••••••">
+        </div>
+        <div class="demo-badge">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Compte Démo : <strong>demo@avicenne.com</strong> / <code>demo123</code></span>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Se connecter <i class="fa-solid fa-arrow-right-to-bracket"></i></button>
+      </form>
+
+      <form id="register-form" class="auth-form">
+        <div class="form-group">
+          <label for="register-name"><i class="fa-solid fa-user"></i> Nom Complet</label>
+          <input type="text" id="register-name" required placeholder="Jean Dupont">
+        </div>
+        <div class="form-group">
+          <label for="register-email"><i class="fa-solid fa-envelope"></i> Adresse Email</label>
+          <input type="email" id="register-email" required placeholder="nom@exemple.com">
+        </div>
+        <div class="form-group">
+          <label for="register-password"><i class="fa-solid fa-lock"></i> Mot de passe</label>
+          <input type="password" id="register-password" required minlength="6" placeholder="••••••••">
+        </div>
+
+        <hr class="form-divider">
+        <p class="form-section-title">Informations de profil initial</p>
+
+        <div class="form-row">
+          <div class="form-group col">
+            <label for="register-age">Âge (ans)</label>
+            <input type="number" id="register-age" min="1" max="120" required placeholder="30">
+          </div>
+          <div class="form-group col">
+            <label for="register-gender">Sexe</label>
+            <select id="register-gender" required>
+              <option value="" disabled selected>Choisir...</option>
+              <option value="H">Homme</option>
+              <option value="F">Femme</option>
+              <option value="A">Autre</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col">
+            <label for="register-height">Taille (cm)</label>
+            <input type="number" id="register-height" min="50" max="250" required placeholder="175">
+          </div>
+          <div class="form-group col">
+            <label for="register-weight">Poids réf (kg)</label>
+            <input type="number" id="register-weight" step="0.1" min="10" max="300" required placeholder="70.5">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-success btn-block">Créer mon compte <i class="fa-solid fa-user-plus"></i></button>
+      </form>
+    </div>
+  </div>
+
+  <!-- application -->
+  <div id="app-container" class="app-container hidden">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand"><i class="fa-solid fa-heart-pulse"></i> <span>ActiveLife</span></div>
+
+      <div class="user-quick-profile">
+        <div class="avatar"><i class="fa-solid fa-user-astronaut"></i></div>
+        <div class="user-info">
+          <h4 id="sidebar-user-name">Chargement...</h4>
+          <p id="sidebar-user-stats">Chargement...</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <button id="nav-dashboard" class="menu-item active" onclick="showSection('dashboard')"><i class="fa-solid fa-chart-line"></i> <span>Tableau de Bord</span></button>
+        <button id="nav-journal" class="menu-item" onclick="showSection('journal')"><i class="fa-solid fa-calendar-check"></i> <span>Journal Exercices</span></button>
+        <button id="nav-weight" class="menu-item" onclick="showSection('weight')"><i class="fa-solid fa-weight-scale"></i> <span>Suivi du Poids</span></button>
+        <button id="nav-profile" class="menu-item" onclick="showSection('profile')"><i class="fa-solid fa-user-gear"></i> <span>Mon Profil</span></button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-export btn-block" onclick="exportUserReportPDF()"><i class="fa-solid fa-file-pdf"></i> <span>Exporter en PDF</span></button>
+        <button class="btn btn-outline-danger btn-block" onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Déconnexion</span></button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="app-header">
+        <div class="header-title">
+          <h1 id="page-title">Tableau de Bord</h1>
+          <p id="page-subtitle">Résumé général de vos entraînements et poids de référence</p>
+        </div>
+        <div class="header-date"><i class="fa-solid fa-calendar-days"></i> <span id="current-date-display">--</span></div>
+      </header>
+
+      <div class="content-body">
+
+        <!-- tableau de bord -->
+        <section id="section-dashboard" class="app-section active-section">
+
+          <div class="dash-quicknav" id="dash-quicknav">
+            <button type="button" class="quicknav-btn active" onclick="scrollToDashSection('dash-calendar', this)"><i class="fa-solid fa-calendar-week"></i> Calendrier</button>
+            <button type="button" class="quicknav-btn" onclick="scrollToDashSection('dash-resume', this)"><i class="fa-solid fa-gauge"></i> Résumé</button>
+            <button type="button" class="quicknav-btn" onclick="scrollToDashSection('dash-objectifs', this)"><i class="fa-solid fa-bullseye"></i> Objectifs</button>
+            <button type="button" class="quicknav-btn" onclick="scrollToDashSection('dash-activite', this)"><i class="fa-solid fa-chart-column"></i> Activité</button>
+          </div>
+
+          <div class="dash-section-heading dash-anchor" id="dash-calendar">
+            <h2><i class="fa-solid fa-calendar-week"></i> Calendrier</h2>
+          </div>
+          <div class="card calendar-card">
+            <div class="calendar-toolbar">
+              <div class="calendar-view-toggle">
+                <button id="cal-view-week" type="button" class="cal-toggle-btn active" onclick="setCalendarView('week')">Semaine</button>
+                <button id="cal-view-day" type="button" class="cal-toggle-btn" onclick="setCalendarView('day')">Jour</button>
+              </div>
+              <div class="calendar-nav">
+                <button type="button" class="cal-nav-btn" onclick="calendarPrev()"><i class="fa-solid fa-chevron-left"></i></button>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="calendarToday()">Aujourd'hui</button>
+                <button type="button" class="cal-nav-btn" onclick="calendarNext()"><i class="fa-solid fa-chevron-right"></i></button>
+              </div>
+              <div class="calendar-range" id="calendar-range-label">--</div>
+            </div>
+            <div class="calendar-body" id="calendar-body"></div>
+          </div>
+
+          <div class="dash-section-heading dash-anchor" id="dash-resume">
+            <h2><i class="fa-solid fa-gauge"></i> Résumé</h2>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon icon-blue"><i class="fa-solid fa-fire-flame-curved"></i></div>
+              <div class="stat-data">
+                <h3>Dépenses aujourd'hui</h3>
+                <p class="value" id="stat-today-calories">0 <span class="unit">kcal</span></p>
+                <p class="subtext" id="stat-today-exercise-count">Aucun entraînement</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon icon-green"><i class="fa-solid fa-weight-scale"></i></div>
+              <div class="stat-data">
+                <h3>Dernier Poids</h3>
+                <p class="value" id="stat-current-weight">-- <span class="unit">kg</span></p>
+                <p class="subtext" id="stat-weight-diff">Réf: -- kg</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon icon-purple"><i class="fa-solid fa-circle-check"></i></div>
+              <div class="stat-data">
+                <h3>Total de la semaine</h3>
+                <p class="value" id="stat-weekly-calories">0 <span class="unit">kcal</span></p>
+                <p class="subtext" id="stat-weekly-avg-calories">Moyenne: -- kcal / jour</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-section-heading dash-anchor" id="dash-objectifs">
+            <h2><i class="fa-solid fa-bullseye"></i> Mes objectifs</h2>
+          </div>
+          <div class="goals-grid">
+
+            <div class="card streak-card">
+              <div class="card-header">
+                <h2><i class="fa-solid fa-bolt"></i> Jour de Série</h2>
+                <span class="info-icon" title="Un jour compte des que tu enregistres une seance ou que tu atteins ton objectif calorique du jour."><i class="fa-regular fa-circle-question"></i></span>
+              </div>
+              <div class="streak-body">
+                <div class="streak-badge">
+                  <span id="streak-count">0</span>
+                  <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div class="streak-msg">
+                  <p id="streak-message">Enregistre une seance aujourd'hui pour demarrer ta serie.</p>
+                </div>
+              </div>
+              <div class="streak-week-strip" id="streak-week-strip"></div>
+            </div>
+
+            <div class="card ring-card">
+              <div class="card-header">
+                <h2><i class="fa-solid fa-scale-balanced"></i> Objectif Hebdomadaire</h2>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="goToGoalSettings()"><i class="fa-solid fa-gear"></i> Définir</button>
+              </div>
+              <div class="ring-body">
+                <div class="ring-wrap">
+                  <canvas id="chart-weekly-ring" width="180" height="180"></canvas>
+                  <div class="ring-center">
+                    <span id="weekly-ring-value">--</span>
+                    <small id="weekly-ring-sub">kg cette semaine</small>
+                  </div>
+                </div>
+                <p class="ring-caption" id="weekly-ring-caption">Definissez un poids cible et un objectif hebdomadaire dans votre profil.</p>
+              </div>
+            </div>
+
+            <div class="card arc-card">
+              <div class="card-header"><h2><i class="fa-solid fa-gauge-high"></i> Progrès Global</h2></div>
+              <div class="arc-body">
+                <svg viewBox="0 0 200 112" class="arc-svg">
+                  <path d="M10,102 A90,90 0 0 1 190,102" class="arc-track" pathLength="100"/>
+                  <path d="M10,102 A90,90 0 0 1 190,102" class="arc-fill" id="global-arc-fill" pathLength="100"/>
+                </svg>
+                <div class="arc-value" id="global-arc-value">0.0%</div>
+                <div class="arc-scale"><span>0%</span><span>100%</span></div>
+                <p class="arc-caption" id="global-arc-caption">Ajoutez un poids cible pour activer votre progression globale.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="dash-section-heading dash-anchor" id="dash-activite">
+            <h2><i class="fa-solid fa-chart-column"></i> Activité</h2>
+          </div>
+          <div class="charts-grid">
+            <div class="chart-card large">
+              <div class="chart-header">
+                <div>
+                  <h3>Dépense Physique Quotidienne</h3>
+                  <p class="chart-subtitle">Calories brûlées (kcal) sur tout ce mois</p>
+                </div>
+              </div>
+              <div class="chart-container"><canvas id="chart-daily-calories"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <h3>Type d'Activités Réalisées</h3>
+                  <p class="chart-subtitle">Répartition du temps d'entraînement par discipline (minutes)</p>
+                </div>
+              </div>
+              <div class="chart-container"><canvas id="chart-weekly-types"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <h3>Historique de Poids</h3>
+                  <p class="chart-subtitle">Suivi des pesées comparé au poids cible/référence (ligne pointillée)</p>
+                </div>
+              </div>
+              <div class="chart-container"><canvas id="chart-weight-trend"></canvas></div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- journal des exercices -->
+        <section id="section-journal" class="app-section">
+          <div class="split-layout">
+            <div class="card form-card">
+              <div class="card-header"><h2><i class="fa-solid fa-circle-plus"></i> Enregistrer un entraînement</h2></div>
+              <form id="exercise-form">
+                <div class="form-group">
+                  <label for="exe-date"><i class="fa-solid fa-calendar"></i> Date</label>
+                  <input type="date" id="exe-date" required>
+                </div>
+                <div class="form-group">
+                  <label for="exe-type"><i class="fa-solid fa-person-running"></i> Discipline</label>
+                  <select id="exe-type" required onchange="onExerciseTypeChange()">
+                    <option value="" disabled selected>Choisir une activité...</option>
+                    <option value="course">Course à pied</option>
+                    <option value="musculation">Musculation / Renforcement</option>
+                    <option value="velo">Cyclisme / Vélo</option>
+                    <option value="natation">Natation</option>
+                    <option value="marche">Marche active</option>
+                    <option value="custom">Autre (Personnalisé)</option>
+                  </select>
+                </div>
+                <div id="custom-exe-group" class="form-group hidden">
+                  <label for="exe-custom-name">Nom du sport personnalisé</label>
+                  <input type="text" id="exe-custom-name" placeholder="Ex: Yoga, Tennis, Escalade">
+                </div>
+                <div class="form-row">
+                  <div class="form-group col">
+                    <label for="exe-duration"><i class="fa-solid fa-clock"></i> Durée (min)</label>
+                    <input type="number" id="exe-duration" min="1" max="480" required placeholder="30" oninput="estimateCalories()">
+                  </div>
+                  <div class="form-group col">
+                    <label for="exe-calories"><i class="fa-solid fa-fire-flame-curved"></i> Calories (kcal)</label>
+                    <input type="number" id="exe-calories" min="1" max="5000" required placeholder="250">
+                  </div>
+                </div>
+                <div class="estimation-badge" id="estimation-badge-container">
+                  <i class="fa-solid fa-calculator"></i> <span id="estimation-badge-text">Sélectionnez une activité pour estimer les calories.</span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Ajouter l'exercice <i class="fa-solid fa-check"></i></button>
+              </form>
+            </div>
+
+            <div class="card list-card">
+              <div class="card-header list-header">
+                <h2><i class="fa-solid fa-list"></i> Historique des séances</h2>
+                <div class="list-filters">
+                  <input type="date" id="filter-date" onchange="filterExercises()">
+                  <button class="btn btn-sm btn-outline-primary" onclick="clearExerciseFilter()">Toutes les dates</button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead><tr><th>Date</th><th>Activité</th><th>Durée</th><th>Calories</th><th class="text-right">Actions</th></tr></thead>
+                  <tbody id="exercise-list-body">
+                    <tr><td colspan="5" class="text-center empty-state"><i class="fa-solid fa-dumbbell"></i><p>Aucune séance enregistrée.</p></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- suivi du poids -->
+        <section id="section-weight" class="app-section">
+          <div class="split-layout">
+            <div class="card form-card">
+              <div class="card-header"><h2><i class="fa-solid fa-weight-scale"></i> Enregistrer une pesée</h2></div>
+              <form id="weight-form">
+                <div class="form-group">
+                  <label for="wei-date"><i class="fa-solid fa-calendar"></i> Date</label>
+                  <input type="date" id="wei-date" required>
+                </div>
+                <div class="form-group">
+                  <label for="wei-val"><i class="fa-solid fa-weight-scale"></i> Poids actuel (kg)</label>
+                  <input type="number" id="wei-val" step="0.1" min="10" max="300" required placeholder="72.3">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Enregistrer le poids <i class="fa-solid fa-check"></i></button>
+              </form>
+              <div class="weight-meta-card">
+                <h3>Indicateurs Physiques</h3>
+                <div class="weight-indicator"><span>Poids cible / Réf :</span><strong id="meta-ref-weight">-- kg</strong></div>
+                <div class="weight-indicator"><span>Dernier poids :</span><strong id="meta-current-weight">-- kg</strong></div>
+                <div class="weight-indicator"><span>Écart global :</span><strong id="meta-weight-diff">-- kg</strong></div>
+                <div class="weight-indicator"><span>Indice IMC :</span><strong id="meta-bmi">--</strong></div>
+              </div>
+            </div>
+
+            <div class="card list-card">
+              <div class="card-header"><h2><i class="fa-solid fa-clock-rotate-left"></i> Historique des pesées</h2></div>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead><tr><th>Date</th><th>Poids</th><th>Écart / Réf.</th><th class="text-right">Actions</th></tr></thead>
+                  <tbody id="weight-list-body">
+                    <tr><td colspan="4" class="text-center empty-state"><i class="fa-solid fa-scale-unbalanced"></i><p>Aucun poids enregistré.</p></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- profil utilisateur -->
+        <section id="section-profile" class="app-section">
+          <div class="profile-layout">
+
+            <div class="card profile-overview-card">
+              <div class="avatar-large"><i class="fa-solid fa-user-astronaut"></i></div>
+              <h2 id="profile-card-name">Chargement...</h2>
+              <p class="profile-email" id="profile-card-email">--</p>
+              <div class="profile-details-grid">
+                <div class="profile-detail-item"><span class="label">Âge</span><span class="val" id="profile-card-age">-- ans</span></div>
+                <div class="profile-detail-item"><span class="label">Sexe</span><span class="val" id="profile-card-gender">--</span></div>
+                <div class="profile-detail-item"><span class="label">Taille</span><span class="val" id="profile-card-height">-- cm</span></div>
+                <div class="profile-detail-item"><span class="label">Poids Réf.</span><span class="val" id="profile-card-weight">-- kg</span></div>
+              </div>
+            </div>
+
+            <div class="profile-right-col">
+
+              <div class="card profile-edit-card">
+                <div class="card-header"><h2><i class="fa-solid fa-user-pen"></i> Informations Personnelles</h2></div>
+                <form id="profile-form">
+                  <div class="form-group">
+                    <label for="prof-name"><i class="fa-solid fa-user"></i> Nom Complet</label>
+                    <input type="text" id="prof-name" required>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col">
+                      <label for="prof-age">Âge (ans)</label>
+                      <input type="number" id="prof-age" min="1" max="120" required>
+                    </div>
+                    <div class="form-group col">
+                      <label for="prof-gender">Sexe</label>
+                      <select id="prof-gender" required>
+                        <option value="H">Homme</option>
+                        <option value="F">Femme</option>
+                        <option value="A">Autre</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col">
+                      <label for="prof-height">Taille (cm)</label>
+                      <input type="number" id="prof-height" min="50" max="250" required>
+                    </div>
+                    <div class="form-group col">
+                      <label for="prof-weight">Poids de Référence (kg)</label>
+                      <input type="number" id="prof-weight" step="0.1" min="10" max="300" required>
+                    </div>
+                  </div>
+
+                  <hr class="form-divider">
+                  <p class="form-section-title">Mes objectifs</p>
+
+                  <div class="form-row">
+                    <div class="form-group col">
+                      <label for="prof-goal-weight" id="prof-goal-weight-label">Poids cible (kg)</label>
+                      <input type="number" id="prof-goal-weight" step="0.1" min="10" max="300" placeholder="Ex: 70">
+                    </div>
+                    <div class="form-group col">
+                      <label for="prof-weekly-goal">Objectif hebdo (kg/semaine)</label>
+                      <input type="number" id="prof-weekly-goal" step="0.1" min="0" max="5" placeholder="Ex: 0.5">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="prof-daily-goal">Objectif calorique quotidien (kcal)</label>
+                    <input type="number" id="prof-daily-goal" step="10" min="0" max="5000" placeholder="Ex: 300">
+                    <small class="password-hint">Un jour est compté comme réussi dans ta série dès qu'une séance est enregistrée ou que ce total est atteint.</small>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary">Enregistrer les changements <i class="fa-solid fa-floppy-disk"></i></button>
+                </form>
+              </div>
+
+              <!-- changer le mot de passe -->
+              <div class="card security-card">
+                <div class="card-header"><h2><i class="fa-solid fa-shield-halved"></i> Sécurité du compte</h2></div>
+                <form id="password-form">
+                  <div class="form-group">
+                    <label for="pwd-current"><i class="fa-solid fa-lock"></i> Mot de passe actuel</label>
+                    <input type="password" id="pwd-current" required placeholder="••••••••">
+                  </div>
+                  <div class="form-group">
+                    <label for="pwd-new"><i class="fa-solid fa-key"></i> Nouveau mot de passe</label>
+                    <input type="password" id="pwd-new" required minlength="6" placeholder="••••••••">
+                    <small class="password-hint">6 caractères minimum.</small>
+                  </div>
+                  <div class="form-group">
+                    <label for="pwd-confirm"><i class="fa-solid fa-key"></i> Confirmer le nouveau mot de passe</label>
+                    <input type="password" id="pwd-confirm" required minlength="6" placeholder="••••••••">
+                  </div>
+                  <div id="pwd-feedback" class="estimation-badge hidden"></div>
+                  <button type="submit" class="btn btn-primary">Changer le mot de passe <i class="fa-solid fa-rotate"></i></button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
